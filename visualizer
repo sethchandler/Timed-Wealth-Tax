@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Analysis: The Ambiguous Effect of a Wealth Tax on Savings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Background: #F8F9FA, Text: #212529, Accent: #4C6EF5, Secondary: #E9ECEF) -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard, not a linear report. This structure is chosen to actively engage the user in exploring the model's core conflict. The flow is: 1) A clear, high-level question to frame the problem. 2) A visual explanation of the opposing economic forces (Income vs. Substitution effects). 3) A central "Policy Lab" simulator where users manipulate key parameters and see the impact on savings in real-time. 4) A section connecting the theory to real-world empirical data. 5) A clear summary of policy implications. This non-linear, interactive approach is superior for teaching the model's dynamics and proving the ambiguity of the outcome, which is the central message of the source report. -->
+    <!-- Visualization & Content Choices: Report Info: The model's core finding is that the effect of a wealth tax on savings is ambiguous, driven by the tension between income and substitution effects, governed by preferences (beta, gamma ratio). Goal: Allow users to discover this ambiguity themselves. Viz/Presentation: An interactive simulator with sliders (for tax rate, bequest motive, preference curvature) and dynamic charts. Interaction: Sliders directly control model parameters. The main output is a dynamic number and a bar on a chart showing the elasticity of savings, instantly visualizing whether savings increase or decrease. A secondary line chart shows the resulting wealth path. Justification: This transforms a static mathematical proof into a tangible, explorable experience. It makes the abstract concepts of income/substitution effects visible and intuitive. Library: Chart.js (Canvas) for all visualizations. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA;
+            color: #212529;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4C6EF5;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .slider-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #E9ECEF;
+            border-radius: 9999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4C6EF5;
+            cursor: pointer;
+            border-radius: 50%;
+            margin-top: -6px;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4C6EF5;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-gray-800 mb-4">Does Taxing Wealth Always Reduce Savings?</h1>
+            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">An interactive exploration of the economic forces shaping household savings decisions in response to an anticipated, one-time wealth tax.</p>
+        </header>
+
+        <main>
+            <section id="conflict" class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-8">A Tale of Two Effects</h2>
+                <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="text-2xl font-semibold mb-3 text-red-600">The Substitution Effect</h3>
+                        <p class="text-gray-700 mb-4">When the government taxes wealth, the return on saving falls. This makes spending today relatively more attractive than saving for tomorrow. All else equal, households substitute away from saving.</p>
+                        <div class="text-center text-4xl font-bold text-red-500 flex items-center justify-center p-4 bg-red-50 rounded-lg">
+                            <span>Savings</span>
+                            <span class="mx-4 text-gray-400">→</span>
+                            <span>↓</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="text-2xl font-semibold mb-3 text-green-600">The Income Effect</h3>
+                        <p class="text-gray-700 mb-4">The tax makes the household poorer overall. To meet a future savings goal (like a specific bequest amount), the household might need to save *more* and consume less today to make up for the wealth lost to the tax.</p>
+                        <div class="text-center text-4xl font-bold text-green-500 flex items-center justify-center p-4 bg-green-50 rounded-lg">
+                            <span>Savings</span>
+                            <span class="mx-4 text-gray-400">→</span>
+                            <span>↑</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-center mt-8 text-lg text-gray-700">The final impact on savings depends on which effect is stronger. This interactive tool lets you explore that relationship.</p>
+            </section>
+
+            <section id="simulator" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-200 mb-16">
+                 <h2 class="text-3xl font-bold text-center mb-2">Policy Lab: Find the Tipping Point</h2>
+                 <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Use the sliders to adjust the household's economic environment and preferences. Observe how the incentive to save changes.</p>
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-6">
+                        <div>
+                            <label for="taxRate" class="block font-semibold mb-2 text-gray-700">Wealth Tax Rate ($\tau$)</label>
+                            <input id="taxRate" type="range" min="0" max="80" value="30" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-track">
+                            <div class="text-right font-medium text-gray-600 mt-1"><span id="taxRateValue">30</span>%</div>
+                            <p class="text-sm text-gray-500 mt-1">How much of the wealth at the check-in date is taxed away?</p>
+                        </div>
+                        <div>
+                            <label for="bequestMotive" class="block font-semibold mb-2 text-gray-700">Bequest Motive Strength ($\beta$)</label>
+                            <input id="bequestMotive" type="range" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-track">
+                            <div class="text-right font-medium text-gray-600 mt-1"><span id="bequestMotiveValue">Medium</span></div>
+                            <p class="text-sm text-gray-500 mt-1">How important is leaving a bequest relative to lifetime consumption?</p>
+                        </div>
+                        <div>
+                            <label for="gammaRatio" class="block font-semibold mb-2 text-gray-700">Bequest Goal Inelasticity ($\gamma_2 / \gamma_1$)</label>
+                            <input id="gammaRatio" type="range" min="0" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-track">
+                            <div class="text-right font-medium text-gray-600 mt-1">Ratio: <span id="gammaRatioValue">1.0</span></div>
+                            <p class="text-sm text-gray-500 mt-1">How resistant is the household to changing its bequest goal? (Higher ratio = more resistance).</p>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-gray-50 p-6 rounded-xl border">
+                        <h3 class="text-xl font-semibold text-center mb-4">Result: The Total Effect on Savings</h3>
+                        <div id="resultCard" class="text-center p-6 rounded-lg transition-colors duration-300">
+                             <p class="text-lg text-gray-700 mb-2">For a 1% increase in the tax rate, pre-tax savings change by:</p>
+                            <p id="elasticityValue" class="text-5xl font-bold mb-4">-0.00%</p>
+                            <p id="resultText" class="text-lg font-medium">The two effects are perfectly balanced.</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-4 mt-4 overflow-hidden">
+                           <div id="elasticityBar" class="h-4 rounded-full transition-all duration-300" style="width: 50%;"></div>
+                        </div>
+                         <div class="flex justify-between text-sm font-medium text-gray-500 mt-1 px-1">
+                            <span>Savings Decrease</span>
+                            <span>Savings Increase</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="wealth-path" class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-2">Visualizing the Life Cycle</h2>
+                <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">See how your parameter choices change the optimal wealth accumulation path over a lifetime. The vertical line shows the tax date.</p>
+                <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
+                   <div class="chart-container mx-auto">
+                        <canvas id="wealthPathChart"></canvas>
+                   </div>
+                </div>
+            </section>
+            
+            <section id="empirical" class="bg-gray-800 text-white p-8 md:p-12 rounded-2xl mb-16">
+                <h2 class="text-3xl font-bold text-center mb-8">Connecting Theory to Reality</h2>
+                <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-4 text-blue-300">The Norwegian Wealth Tax Study</h3>
+                        <p class="text-gray-300 mb-4">The corrected theory suggests savings *can* rise with taxes. This isn't just a theoretical curiosity. A study of Norway's annual wealth tax provided powerful real-world evidence.</p>
+                        <p class="text-gray-300">Using geographic discontinuities for identification, researchers found that households responded to higher tax rates by significantly <span class="font-bold text-white">increasing</span> their savings, primarily by working more to defend their wealth targets.</p>
+                    </div>
+                    <div class="bg-gray-700 p-6 rounded-xl">
+                        <p class="text-lg text-center text-gray-300 mb-2">For every 1 NOK paid in wealth tax, households...</p>
+                        <p class="text-5xl font-bold text-center text-green-400">+3.76 NOK</p>
+                        <p class="text-lg text-center text-gray-300 mt-2">...in additional net financial saving.</p>
+                        <p class="text-xs text-center text-gray-400 mt-4">(Source: Ring, 2021)</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="implications" class="text-center">
+                 <h2 class="text-3xl font-bold mb-4">Policy Implications</h2>
+                 <p class="text-lg text-gray-600 max-w-3xl mx-auto">The effect of asset-based means-testing is not one-size-fits-all. A policy that discourages savings for one family might encourage it for another. Effective policy design must account for this complex behavioral response, recognizing that household goals and preferences are paramount.</p>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const taxRateSlider = document.getElementById('taxRate');
+            const bequestMotiveSlider = document.getElementById('bequestMotive');
+            const gammaRatioSlider = document.getElementById('gammaRatio');
+
+            const taxRateValue = document.getElementById('taxRateValue');
+            const bequestMotiveValue = document.getElementById('bequestMotiveValue');
+            const gammaRatioValue = document.getElementById('gammaRatioValue');
+            
+            const elasticityValue = document.getElementById('elasticityValue');
+            const resultText = document.getElementById('resultText');
+            const resultCard = document.getElementById('resultCard');
+            const elasticityBar = document.getElementById('elasticityBar');
+
+            const sliders = [taxRateSlider, bequestMotiveSlider, gammaRatioSlider];
+            
+            const ctx = document.getElementById('wealthPathChart').getContext('2d');
+            let wealthChart;
+
+            function getBequestMotiveText(value) {
+                if (value < 20) return 'Very Weak';
+                if (value < 40) return 'Weak';
+                if (value < 60) return 'Medium';
+                if (value < 80) return 'Strong';
+                return 'Very Strong';
+            }
+
+            function calculateModel() {
+                const tau = taxRateSlider.value / 100;
+                const beta = bequestMotiveSlider.value / 100;
+                const gamma_ratio = gammaRatioSlider.value / 100 + 0.1;
+
+                taxRateValue.textContent = taxRateSlider.value;
+                bequestMotiveValue.textContent = getBequestMotiveText(bequestMotiveSlider.value);
+                gammaRatioValue.textContent = (gamma_ratio).toFixed(1);
+                
+                const substitution_strength = 0.5 * (1 + tau);
+                const income_strength_base = beta * 2;
+                
+                let income_multiplier;
+                if(gamma_ratio < 1.0) {
+                    income_multiplier = Math.pow(gamma_ratio, 2);
+                } else {
+                    income_multiplier = Math.pow(gamma_ratio, 1.5);
+                }
+                
+                const income_strength = income_strength_base * income_multiplier;
+                
+                const elasticity = (income_strength - substitution_strength) * 0.5;
+
+                updateResultDisplay(elasticity);
+                updateWealthChart(tau, elasticity);
+            }
+            
+            function updateResultDisplay(elasticity) {
+                elasticityValue.textContent = `${elasticity.toFixed(2)}%`;
+                
+                const barWidth = Math.max(0, Math.min(100, 50 + elasticity * 50));
+                elasticityBar.style.width = `${barWidth}%`;
+
+                if (elasticity > 0.1) {
+                    resultText.textContent = 'The income effect dominates. Households save MORE.';
+                    resultCard.className = 'text-center p-6 rounded-lg transition-colors duration-300 bg-green-100';
+                    elasticityBar.className = 'h-4 rounded-full transition-all duration-300 bg-green-500';
+                } else if (elasticity < -0.1) {
+                    resultText.textContent = 'The substitution effect dominates. Households save LESS.';
+                    resultCard.className = 'text-center p-6 rounded-lg transition-colors duration-300 bg-red-100';
+                    elasticityBar.className = 'h-4 rounded-full transition-all duration-300 bg-red-500';
+                } else {
+                    resultText.textContent = 'The two effects are nearly balanced.';
+                    resultCard.className = 'text-center p-6 rounded-lg transition-colors duration-300 bg-gray-100';
+                    elasticityBar.className = 'h-4 rounded-full transition-all duration-300 bg-gray-500';
+                }
+            }
+
+            function generateWealthData(tau, elasticity) {
+                const T1 = 15;
+                const T2 = 45;
+                const r = 0.02;
+                const W0 = 10;
+                let wealthData = [];
+                let labels = [];
+
+                let savings_effort = 1 + elasticity * 0.1;
+
+                for (let t = 0; t <= T2; t++) {
+                    labels.push(t);
+                    let wealth;
+                    if (t <= T1) {
+                        wealth = W0 * Math.exp((r * savings_effort) * t);
+                    } else {
+                        const W_T1_minus = W0 * Math.exp((r * savings_effort) * T1);
+                        const W_T1_plus = W_T1_minus * (1 - tau);
+                        wealth = W_T1_plus * Math.exp(r * (t - T1));
+                    }
+                    wealthData.push(wealth);
+                }
+                return { labels, wealthData };
+            }
+
+            function updateWealthChart(tau, elasticity) {
+                const { labels, wealthData } = generateWealthData(tau, elasticity);
+                
+                wealthChart.data.labels = labels;
+                wealthChart.data.datasets[0].data = wealthData;
+                wealthChart.update();
+            }
+
+            function initializeChart() {
+                const { labels, wealthData } = generateWealthData(0.3, 0);
+                wealthChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Household Wealth',
+                            data: wealthData,
+                            borderColor: '#4C6EF5',
+                            backgroundColor: 'rgba(76, 110, 245, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            tension: 0.1,
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Wealth' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Time (Years)' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            annotation: {
+                                annotations: {
+                                    line1: {
+                                        type: 'line',
+                                        xMin: 15,
+                                        xMax: 15,
+                                        borderColor: 'rgb(255, 99, 132)',
+                                        borderWidth: 2,
+                                        borderDash: [6, 6],
+                                        label: {
+                                            content: 'Tax Date',
+                                            enabled: true,
+                                            position: 'start'
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                });
+            }
+
+            sliders.forEach(slider => {
+                slider.addEventListener('input', calculateModel);
+            });
+            
+            initializeChart();
+            calculateModel();
+        });
+    </script>
+</body>
+</html>
