@@ -264,7 +264,7 @@ def optimize_model():
         
         bounds = [
             (min_wealth, max_w1),     # w1 bounds
-            (min_wealth, max_w2)      # w2 bounds
+            (min_wealth, max_w2) ]     # w2 bounds
 
         
         #bounds = [(1e-6, None), (1e-6, None)]
