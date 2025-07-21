@@ -256,7 +256,18 @@ def optimize_model():
         initial_guess = [params.get('w0', 50000) * 1.5, params.get('w0', 50000) * 1.2]
         
         # Define bounds to ensure wealth is positive
-        bounds = [(1e-6, None), (1e-6, None)]
+        max_w1 = w0 * np.exp(r * t1)
+        max_w2 = max_w1 * (1 - tau) * np.exp(r * t2)
+        
+        # Lower bounds: small positive values to avoid numerical issues
+        min_wealth = min(10, w0 * 0.001)  # At least $100 or 0.1% of initial wealth
+        
+        bounds = [
+            (min_wealth, max_w1),     # w1 bounds
+            (min_wealth, max_w2)      # w2 bounds
+
+        
+        #bounds = [(1e-6, None), (1e-6, None)]
         
         # Run the SciPy optimizer
         result = minimize(
